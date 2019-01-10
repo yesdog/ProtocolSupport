@@ -1,4 +1,4 @@
-ProtocolSupport nethecube
+ProtocolSupport
 ===============
 
 [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/x935y8p)
