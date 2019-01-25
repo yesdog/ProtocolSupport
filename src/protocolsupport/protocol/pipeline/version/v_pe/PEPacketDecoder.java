@@ -23,7 +23,12 @@ import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.GodPacke
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.HeldSlot;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.Interact;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.InventoryClose;
+<<<<<<< HEAD
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.LocalPlayerInitialized;
+=======
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.ItemFrameDrop;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.GodPacket;
+>>>>>>> 0f8247cf... item frame fix
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.MapInfoRequest;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.MoveVehicle;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.PlayerAbilities;
@@ -54,6 +59,7 @@ public class PEPacketDecoder extends AbstractPacketDecoder {
 		registry.register(NetworkState.PLAY, PEPacketIDs.CHAT, Chat::new);
 		registry.register(NetworkState.PLAY, PEPacketIDs.ANIMATION, Animation::new);
 		registry.register(NetworkState.PLAY, PEPacketIDs.INTERACT, Interact::new);
+		registry.register(NetworkState.PLAY, PEPacketIDs.ITEM_FRAME_DROP, ItemFrameDrop::new);
 		registry.register(NetworkState.PLAY, PEPacketIDs.COMMAND_REQUEST, CommandRequest::new);
 		registry.register(NetworkState.PLAY, PEPacketIDs.TILE_DATA_UPDATE, BlockTileUpdate::new);
 		registry.register(NetworkState.PLAY, PEPacketIDs.MOB_EQUIPMENT, HeldSlot::new);
