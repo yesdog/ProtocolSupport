@@ -9,7 +9,6 @@ import protocolsupport.protocol.packet.middleimpl.ServerBoundPacketData;
 import protocolsupport.protocol.serializer.MiscSerializer;
 import protocolsupport.protocol.serializer.StringSerializer;
 import protocolsupport.protocol.utils.EnumConstantLookups;
-import protocolsupport.protocol.utils.ProtocolVersionsHelper;
 import protocolsupport.utils.recyclable.RecyclableCollection;
 import protocolsupport.utils.recyclable.RecyclableSingletonList;
 
@@ -29,14 +28,18 @@ public abstract class MiddleClientSettings extends ServerBoundMiddlePacket {
 	@Override
 	public RecyclableCollection<ServerBoundPacketData> toNative() {
 		cache.getAttributesCache().setLocale(locale);
+		return RecyclableSingletonList.create(create(locale, viewDist, chatMode, chatColors, skinFlags, mainHand));
+	}
+
+	public static ServerBoundPacketData create(String locale, int viewDist, ChatMode chatMode, boolean chatColors, int skinFlags, MainHand mainHand) {
 		ServerBoundPacketData creator = ServerBoundPacketData.create(ServerBoundPacket.PLAY_SETTINGS);
-		StringSerializer.writeString(creator, ProtocolVersionsHelper.LATEST_PC, locale);
+		StringSerializer.writeVarIntUTF8String(creator, locale);
 		creator.writeByte(viewDist);
 		MiscSerializer.writeVarIntEnum(creator, chatMode);
 		creator.writeBoolean(chatColors);
 		creator.writeByte(skinFlags);
 		MiscSerializer.writeVarIntEnum(creator, mainHand);
-		return RecyclableSingletonList.create(creator);
+		return creator;
 	}
 
 	protected static enum ChatMode {

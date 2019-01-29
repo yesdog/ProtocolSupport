@@ -6,8 +6,15 @@ import protocolsupport.protocol.utils.datawatcher.ReadableDataWatcherObject;
 
 public class DataWatcherObjectFloat extends ReadableDataWatcherObject<Float> {
 
+	public DataWatcherObjectFloat() {
+	}
+
+	public DataWatcherObjectFloat(float value) {
+		this.value = value;
+	}
+
 	@Override
-	public void readFromStream(ByteBuf from, ProtocolVersion version, String locale) {
+	public void readFromStream(ByteBuf from) {
 		value = from.readFloat();
 	}
 

@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.CachedServerIcon;
 
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import protocolsupport.api.ProtocolVersion;
 import protocolsupport.api.chat.modifiers.HoverAction.EntityInfo;
 import protocolsupport.protocol.packet.handler.AbstractHandshakeListener;
@@ -44,11 +45,17 @@ public interface PlatformUtils {
 
 	public BlockData getBlockDataByNetworkId(int id);
 
+	public int getBlockDataNetworkTypeId(BlockData blockdata);
+
+	public BlockData getBlockDataByNetworkTypeId(int id);
+
 	public List<BlockData> getBlockDataList(Material material);
 
 	public List<Player> getNearbyPlayers(Location location, double rX, double rY, double rZ);
 
 	public String getOutdatedServerMessage();
+
+	public String getOutdatedClientMessage();
 
 	public boolean isRunning();
 
@@ -81,6 +88,8 @@ public interface PlatformUtils {
 	public void enableEncryption(ChannelPipeline pipeline, SecretKey key, boolean fullEncryption);
 
 	public void setFraming(ChannelPipeline pipeline, IPacketSplitter splitter, IPacketPrepender prepender);
+
+	public EventLoopGroup getServerEventLoop();
 
 	public AbstractHandshakeListener createHandshakeListener(NetworkManagerWrapper networkmanager);
 

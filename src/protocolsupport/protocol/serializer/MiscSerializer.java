@@ -36,6 +36,11 @@ public class MiscSerializer {
 		to.writeLong(uuid.getLeastSignificantBits());
 	}
 
+	public static void writePEUUID(ByteBuf to, UUID uuid) {
+		to.writeLongLE(uuid.getMostSignificantBits());
+		to.writeLongLE(uuid.getLeastSignificantBits());
+	}
+
 	public static byte[] readAllBytes(ByteBuf buf) {
 		return MiscSerializer.readBytes(buf, buf.readableBytes());
 	}

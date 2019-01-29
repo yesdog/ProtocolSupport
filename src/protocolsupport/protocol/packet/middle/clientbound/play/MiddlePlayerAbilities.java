@@ -6,6 +6,9 @@ import protocolsupport.protocol.packet.middle.ClientBoundMiddlePacket;
 
 public abstract class MiddlePlayerAbilities extends ClientBoundMiddlePacket {
 
+	protected static final int flagOffsetIsFlying = 0x2;
+	protected static final int flagOffsetCanFly = 0x4;
+
 	public MiddlePlayerAbilities(ConnectionImpl connection) {
 		super(connection);
 	}

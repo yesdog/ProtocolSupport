@@ -40,4 +40,9 @@ public class ProtocolUtils {
 		}
 	}
 
+	protected static ProtocolVersion readPEHandshake(ByteBuf data) {
+		int incomingversion = data.readInt();
+		return ProtocolVersionsHelper.getPEProtocolVersion(incomingversion);
+	}
+
 }

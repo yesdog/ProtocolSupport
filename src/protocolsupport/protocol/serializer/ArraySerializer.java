@@ -49,12 +49,8 @@ public class ArraySerializer {
 		return array;
 	}
 
-	public static String[] readVarIntStringArray(ByteBuf from, ProtocolVersion version, int strmaxlength) {
-		return readVarIntTArray(from, String.class, buf -> StringSerializer.readString(buf, version, strmaxlength));
-	}
-
-	public static String[] readVarIntStringArray(ByteBuf from, ProtocolVersion version) {
-		return readVarIntTArray(from, String.class, buf -> StringSerializer.readString(buf, version));
+	public static String[] readVarIntVarIntUTF8StringArray(ByteBuf from) {
+		return readVarIntTArray(from, String.class, StringSerializer::readVarIntUTF8String);
 	}
 
 
@@ -121,6 +117,13 @@ public class ArraySerializer {
 		VarNumberSerializer.writeVarInt(to, array.length);
 		for (int element : array) {
 			VarNumberSerializer.writeVarInt(to, element);
+		}
+	}
+
+	public static void writeSVarIntSVarIntArray(ByteBuf to, int[] array) {
+		VarNumberSerializer.writeSVarInt(to, array.length);
+		for (int element : array) {
+			VarNumberSerializer.writeSVarInt(to, element);
 		}
 	}
 

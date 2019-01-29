@@ -4,10 +4,13 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 
 import io.netty.buffer.ByteBuf;
-import protocolsupport.api.ProtocolType;
 import protocolsupport.api.ProtocolVersion;
 
 public class StringSerializer {
+
+	public static String readVarIntUTF8String(ByteBuf from) {
+		return new String(MiscSerializer.readBytes(from,  VarNumberSerializer.readVarInt(from)), StandardCharsets.UTF_8);
+	}
 
 	public static String readString(ByteBuf from, ProtocolVersion version) {
 		return readString(from, version, Short.MAX_VALUE);
@@ -27,6 +30,12 @@ public class StringSerializer {
 		}
 	}
 
+	public static void writeVarIntUTF8String(ByteBuf to, String string) {
+		byte[] data = string.getBytes(StandardCharsets.UTF_8);
+		VarNumberSerializer.writeVarInt(to, data.length);
+		to.writeBytes(data);
+	}
+
 	public static void writeString(ByteBuf to, ProtocolVersion version, String string) {
 		if (isUsingUTF16(version)) {
 			to.writeShort(string.length());
@@ -41,11 +50,13 @@ public class StringSerializer {
 	}
 
 	private static boolean isUsingUTF16(ProtocolVersion version) {
-		return (version.getProtocolType() == ProtocolType.PC) && version.isBeforeOrEq(ProtocolVersion.MINECRAFT_1_6_4);
+		return version.isPC() && version.isBeforeOrEq(ProtocolVersion.MINECRAFT_1_6_4);
 	}
 
 	private static boolean isUsingUTF8(ProtocolVersion version) {
-		return (version.getProtocolType() == ProtocolType.PC) && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_7_5);
+		return
+			(version.isPC() && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_7_5)) ||
+			(version.isPE());
 	}
 
 }

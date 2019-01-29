@@ -29,8 +29,12 @@ public class Decompressor {
 	public byte[] decompress(byte[] input, int offset, int length, int uncompressedlength) throws DataFormatException {
 		inflater.setInput(input, offset, length);
 		byte[] uncompressed = new byte[uncompressedlength];
-		inflater.inflate(uncompressed);
-		inflater.reset();
+		try {
+			inflater.setInput(input);
+			inflater.inflate(uncompressed);
+		} finally {
+			inflater.reset();
+		}
 		return uncompressed;
 	}
 
@@ -43,6 +47,7 @@ public class Decompressor {
 	}
 
 	public void recycle() {
+		inflater.reset();
 		handle.recycle(this);
 	}
 

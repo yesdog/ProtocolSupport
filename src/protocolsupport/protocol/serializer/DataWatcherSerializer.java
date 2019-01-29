@@ -30,8 +30,8 @@ import protocolsupport.utils.CollectionsUtils.ArrayMap;
 
 public class DataWatcherSerializer {
 
-	//while meta indexes can be now up to 255, we actually use up to 31
-	public static final int MAX_USED_META_INDEX = 31;
+	//while meta indexes can be now up to 255, we actually use up to 31, but we use upto 85 for PE
+	public static final int MAX_USED_META_INDEX = 85;
 
 	@SuppressWarnings("unchecked")
 	private static final Supplier<? extends ReadableDataWatcherObject<?>>[] registry = new Supplier[256];
@@ -58,7 +58,7 @@ public class DataWatcherSerializer {
 		registry[DataWatcherObjectIdRegistry.getTypeId(supplier.get().getClass(), ProtocolVersionsHelper.LATEST_PC)] = supplier;
 	}
 
-	public static void readDataTo(ByteBuf from, ProtocolVersion version, String locale, ArrayMap<DataWatcherObject<?>> to) {
+	public static void readDataTo(ByteBuf from, ArrayMap<DataWatcherObject<?>> to) {
 		do {
 			int key = from.readUnsignedByte();
 			if (key == 0xFF) {
@@ -67,7 +67,7 @@ public class DataWatcherSerializer {
 			int type = from.readUnsignedByte();
 			try {
 				ReadableDataWatcherObject<?> object = registry[type].get();
-				object.readFromStream(from, version, locale);
+				object.readFromStream(from);
 				to.put(key, object);
 			} catch (Exception e) {
 				throw new DecoderException(MessageFormat.format("Unable to decode datawatcher object (type: {0}, index: {1})", type, key), e);
@@ -110,6 +110,28 @@ public class DataWatcherSerializer {
 			to.writeByte(0);
 		}
 		to.writeByte(127);
+	}
+
+	public static void writePEData(ByteBuf to, ProtocolVersion version, String locale, ArrayMap<DataWatcherObject<?>> peMetadata) {
+		int entries = 0;
+		int writerPreIndex = to.writerIndex();
+		//Fake fixed-varint length.
+		to.writeZero(VarNumberSerializer.MAX_LENGTH);
+		for (int key = peMetadata.getMinKey(); key < peMetadata.getMaxKey(); key++) {
+			DataWatcherObject<?> object = peMetadata.get(key);
+			if (object != null) {
+				VarNumberSerializer.writeVarInt(to, key);
+				VarNumberSerializer.writeVarInt(to, DataWatcherObjectIdRegistry.getTypeId(object, version));
+				object.writeToStream(to, version, locale);
+				entries++;
+			}
+		}
+		int writerPostIndex = to.writerIndex();
+		//Overwrite fake length.
+		to.writerIndex(writerPreIndex);
+		VarNumberSerializer.writeFixedSizeVarInt(to, entries);
+		//Return writer.
+		to.writerIndex(writerPostIndex);
 	}
 
 }

@@ -92,11 +92,11 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 
 	protected final Entity entity;
 	protected final Set<AttributeInstance> attributes;
-	protected final int trackRange;
+	protected final int defaultTrackRange;
 	protected final int updateInterval;
 	protected final boolean updateVelocity;
 
-	protected int viewDistance;
+	protected int maxTrackRange;
 
 	protected double lastScanLocX;
 	protected double lastScanLocY;
@@ -113,16 +113,16 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 	protected double lastMotZ;
 	protected List<Entity> lastPassengers = Collections.emptyList();
 
-	public SpigotEntityTrackerEntry(Entity entity, int trackRange, int viewDistance, int updateInterval, boolean updateVelocity) {
-		super(entity, trackRange, viewDistance, updateInterval, updateVelocity);
+	public SpigotEntityTrackerEntry(Entity entity, int defaultTrackRange, int maxTrackRange, int updateInterval, boolean updateVelocity) {
+		super(entity, defaultTrackRange, maxTrackRange, updateInterval, updateVelocity);
 		this.entity = entity;
 		if (entity instanceof EntityLiving) {
 			this.attributes = ((AttributeMapServer) ((EntityLiving) entity).getAttributeMap()).getAttributes();
 		} else {
 			this.attributes = Collections.emptySet();
 		}
-		this.trackRange = trackRange;
-		this.viewDistance = viewDistance;
+		this.defaultTrackRange = defaultTrackRange;
+		this.maxTrackRange = maxTrackRange;
 		this.updateInterval = updateInterval;
 		this.updateVelocity = updateVelocity;
 		this.lastScanLocX = entity.locX;
@@ -195,7 +195,7 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 				}
 			}
 		}
-		if (((a > 0) && ((a % updateInterval) == 0)) || entity.impulse) {
+		if (((a > 0) && ((a % updateInterval) == 0)) || entity.impulse || hasSignificantVelocity()) {
 			entity.impulse = false;
 			if (entity.isPassenger()) {
 				updateRotationIfChanged();
@@ -228,7 +228,12 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 			float eHeadYaw = entity.getHeadRotation();
 			if (Math.abs(eHeadYaw - lastHeadYaw) >= 1) {
 				lastHeadYaw = eHeadYaw;
-				broadcast(new PacketPlayOutEntityHeadRotation(entity, (byte) MathHelper.d((eHeadYaw * 256.0f) / 360.0f)));
+				if (!(entity instanceof EntityArrow)) {
+					broadcast(new PacketPlayOutEntityHeadRotation(entity, (byte) MathHelper.d((eHeadYaw * 256.0f) / 360.0f)));
+				}
+				if (entity instanceof EntityPlayer) {
+					broadcast(new PacketPlayOutEntityTeleport(entity));
+				}
 			}
 		}
 		if (entity.getDataWatcher().a()) {
@@ -342,6 +347,10 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 		}
 	}
 
+	private boolean hasSignificantVelocity() {
+		return Math.abs(entity.motX) > 1 || Math.abs(entity.motY) > 1 || Math.abs(entity.motZ) > 1;
+	}
+
 	protected void addTrackedPlayer(EntityPlayer entityplayer) {
 		if (paperTrackedPlayersMapPresent) {
 			trackedPlayerMap.put(entityplayer, Boolean.TRUE);
@@ -362,12 +371,12 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 	public boolean c(EntityPlayer entityplayer) {
 		double diffX = entityplayer.locX - entity.locX;
 		double diffZ = entityplayer.locZ - entity.locZ;
-		int lTrackRange = Math.min(trackRange, viewDistance);
+		int lTrackRange = Math.min(defaultTrackRange, maxTrackRange);
 		return (diffX >= -lTrackRange) && (diffX <= lTrackRange) && (diffZ >= -lTrackRange) && (diffZ <= lTrackRange) && entity.a(entityplayer);
 	}
 
 	protected boolean canPlayerSeeTrackerChunk(EntityPlayer entityplayer) {
-		return entityplayer.getWorldServer().getPlayerChunkMap().a(entityplayer, entity.ae, entity.ag);
+		return entityplayer.getWorldServer().getPlayerChunkMap().a(entityplayer, entity.chunkX, entity.chunkZ);
 	}
 
 	protected static final CachedInstanceOfChain<Function<Entity, Packet<?>>> createSpawnPacketMethods = new CachedInstanceOfChain<>();
@@ -467,7 +476,7 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 
 	@Override
 	public void a(int i) {
-		viewDistance = i;
+		maxTrackRange = i;
 	}
 
 	@Override

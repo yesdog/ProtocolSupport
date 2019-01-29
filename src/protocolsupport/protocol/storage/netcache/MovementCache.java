@@ -11,6 +11,24 @@ public class MovementCache {
 	protected double z;
 	protected int teleportConfirmId;
 
+	public double getX() {
+		return x;
+	}
+
+	public double getY() {
+		return y;
+	}
+
+	public double getZ() {
+		return z;
+	}
+
+	public int teleportConfirm() {
+		int id = teleportConfirmId;
+		teleportConfirmId = -1;
+		return id;
+	}
+
 	public int tryTeleportConfirm(double x, double y, double z) {
 		if (teleportConfirmId == -1) {
 			return -1;
@@ -20,9 +38,7 @@ public class MovementCache {
 			(Math.abs(this.y - y) < acceptableError) &&
 			(Math.abs(this.z - z) < acceptableError)
 		) {
-			int r = teleportConfirmId;
-			teleportConfirmId = -1;
-			return r;
+			return teleportConfirm();
 		}
 		return -1;
 	}
@@ -32,6 +48,63 @@ public class MovementCache {
 		this.y = y;
 		this.z = z;
 		this.teleportConfirmId = teleportConfirmId;
+	}
+
+
+	private static final int peIncreasedLeniencyMillis = 1000;
+	private double peClientX;
+	private double peClientY;
+	private double peClientZ;
+	private long pePositionLeniencyIncreaseTimestamp;
+	private double pePositionLeniency = 0.5;
+	private boolean peLeftPaddleTurning = false;
+	private boolean peRightPaddleTurning = false;
+
+	public void setPEClientPosition(double x, double y, double z) {
+		this.peClientX = x;
+		this.peClientY = y;
+		this.peClientZ = z;
+	}
+
+	public double getPEClientX() {
+		return peClientX;
+	}
+
+	public double getPEClientY() {
+		return peClientY;
+	}
+
+	public double getPEClientZ() {
+		return peClientZ;
+	}
+
+	public void updatePEPositionLeniency(double currentPEClientY) {
+		if (currentPEClientY > peClientY) {
+			pePositionLeniency = 3;
+			pePositionLeniencyIncreaseTimestamp = System.currentTimeMillis();
+		} else if ((pePositionLeniency != 0.5) && ((System.currentTimeMillis() - pePositionLeniencyIncreaseTimestamp) > peIncreasedLeniencyMillis)) {
+			pePositionLeniency = 0.5;
+		}
+	}
+
+	public boolean isPEPositionAboveLeniency() {
+		return (Math.abs(peClientX - x) > pePositionLeniency) || (Math.abs(peClientY - y) > pePositionLeniency) || (Math.abs(peClientZ - z) > pePositionLeniency);
+	}
+
+	public boolean isPELeftPaddleTurning() {
+		return peLeftPaddleTurning;
+	}
+
+	public void setPELeftPaddleTurning(boolean peLeftPaddleTurning) {
+		this.peLeftPaddleTurning = peLeftPaddleTurning;
+	}
+
+	public boolean isPERightPaddleTurning() {
+		return peRightPaddleTurning;
+	}
+
+	public void setPERightPaddleTurning(boolean peRightPaddleTurning) {
+		this.peRightPaddleTurning = peRightPaddleTurning;
 	}
 
 	@Override

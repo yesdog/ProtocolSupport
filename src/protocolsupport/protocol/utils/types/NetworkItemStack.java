@@ -1,12 +1,15 @@
 package protocolsupport.protocol.utils.types;
 
 import protocolsupport.protocol.utils.types.nbt.NBTCompound;
+import protocolsupport.utils.Utils;
 
 public class NetworkItemStack {
 
+	public static final int DEFAULT_LEGACY_DATA = -1;
+
 	protected int runtimeId;
 	protected int amount;
-	protected int legacyData;
+	protected int legacyData = DEFAULT_LEGACY_DATA;
 	protected NBTCompound nbt;
 
 	public boolean isNull() {
@@ -46,13 +49,46 @@ public class NetworkItemStack {
 	}
 
 	public NetworkItemStack cloneItemStack() {
-		NetworkItemStack stack = new NetworkItemStack();
+		final NetworkItemStack stack = new NetworkItemStack();
 		stack.setTypeId(getTypeId());
+		stack.setLegacyData(getLegacyData());
 		stack.setAmount(getAmount());
-		stack.setNBT(getNBT());
+		stack.setNBT(getNBT() == null ? null : getNBT().clone());
 		return stack;
 	}
 
+	@Override
+	public boolean equals(Object object) {
+		if (object instanceof NetworkItemStack) {
+			final NetworkItemStack wrapper = (NetworkItemStack) object;
+			if (wrapper.isNull() || isNull()) {
+				return wrapper.isNull() == isNull();
+			}
+			final NBTCompound thatNBT = wrapper.getNBT();
+			return  (wrapper.getTypeId() == getTypeId()) &&
+					(wrapper.getLegacyData() == getLegacyData()) &&
+					//(wrapper.getAmount() == getAmount()) &&
+					(thatNBT == getNBT() || (thatNBT != null ? thatNBT.equals(getNBT()) : false));
+		}
+		return false;
+	}
+
+	@Override
+	public String toString() {
+		return Utils.toStringAllFields(this);
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 0;
+		if (!isNull()) {
+			hash = getTypeId();
+			hash = 524287 * hash + getLegacyData();
+			//hash = 41 * hash + getAmount();
+			hash = 31 * hash + (getNBT() == null ? 0 : getNBT().hashCode());
+		}
+		return hash;
+	}
 
 	public static final NetworkItemStack NULL = new NetworkItemStack() {
 
@@ -98,6 +134,11 @@ public class NetworkItemStack {
 		@Override
 		public int getAmount() {
 			throw reject();
+		}
+
+		@Override
+		public String toString() {
+			return "NetworkItemStack.NULL";
 		}
 
 	};

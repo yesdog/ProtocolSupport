@@ -127,6 +127,16 @@
 //	}
 //
 //	@Override
+//	public short getShortNumber(String key) {
+//		return getNumber(key).shortValue();
+//	}
+//
+//	@Override
+//	public byte getByteNumber(String key) {
+//		return getNumber(key).byteValue();
+//	}
+//
+//	@Override
 //	public long getLongNumber(String key) {
 //		return getNumber(key).longValue();
 //	}
@@ -223,6 +233,15 @@
 //	@Override
 //	public void setLongArray(String key, long[] value) {
 //		//TODO: actually implement this
+//	}
+//
+//	@Override
+//	public NBTTagCompoundWrapper clone() {
+//		try {
+//			return wrap(Mojangson.parseCompound(Mojangson.fromTag(tag)));
+//		} catch (MojangsonParseException e) {
+//			return NBTTagCompoundWrapper.NULL;
+//		}
 //	}
 //
 //	@Override

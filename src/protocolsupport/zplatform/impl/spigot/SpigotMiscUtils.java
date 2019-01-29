@@ -36,6 +36,7 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import net.minecraft.server.v1_13_R2.AxisAlignedBB;
 import net.minecraft.server.v1_13_R2.Block;
 import net.minecraft.server.v1_13_R2.EntityPlayer;
@@ -67,6 +68,7 @@ import protocolsupport.protocol.utils.types.NetworkItemStack;
 import protocolsupport.protocol.utils.types.nbt.NBTCompound;
 import protocolsupport.protocol.utils.types.nbt.serializer.DefaultNBTSerializer;
 import protocolsupport.zplatform.PlatformUtils;
+import protocolsupport.zplatform.impl.spigot.injector.network.SpigotNettyInjector;
 import protocolsupport.zplatform.impl.spigot.network.SpigotChannelHandlers;
 import protocolsupport.zplatform.impl.spigot.network.handler.SpigotHandshakeListener;
 import protocolsupport.zplatform.impl.spigot.network.pipeline.SpigotPacketCompressor;
@@ -161,6 +163,16 @@ public class SpigotMiscUtils implements PlatformUtils {
 	}
 
 	@Override
+	public int getBlockDataNetworkTypeId(BlockData blockdata) {
+		return IRegistry.BLOCK.a(((CraftBlockData) blockdata).getState().getBlock());
+	}
+
+	@Override
+	public BlockData getBlockDataByNetworkTypeId(int id) {
+		return CraftBlockData.fromData(IRegistry.BLOCK.fromId(id).getBlockData());
+	}
+
+	@Override
 	public List<BlockData> getBlockDataList(Material material) {
 		return
 			CraftMagicNumbers.getBlock(material).getStates().a().stream()
@@ -249,6 +261,11 @@ public class SpigotMiscUtils implements PlatformUtils {
 	@Override
 	public String getOutdatedServerMessage() {
 		return SpigotConfig.outdatedServerMessage;
+	}
+
+	@Override
+	public String getOutdatedClientMessage() {
+		return SpigotConfig.outdatedClientMessage;
 	}
 
 	@Override
@@ -343,6 +360,11 @@ public class SpigotMiscUtils implements PlatformUtils {
 	public void setFraming(ChannelPipeline pipeline, IPacketSplitter splitter, IPacketPrepender prepender) {
 		((SpigotWrappedSplitter) pipeline.get(SpigotChannelHandlers.SPLITTER)).setRealSplitter(splitter);
 		((SpigotWrappedPrepender) pipeline.get(SpigotChannelHandlers.PREPENDER)).setRealPrepender(prepender);
+	}
+
+	@Override
+	public EventLoopGroup getServerEventLoop() {
+		return SpigotNettyInjector.getServerEventLoop();
 	}
 
 }

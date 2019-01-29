@@ -12,6 +12,7 @@ import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectByte;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectChat;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectDirection;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectFloat;
+import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectFloatLe;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectInt;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectItemStack;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectNBTTagCompound;
@@ -20,12 +21,20 @@ import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectOptio
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectOptionalUUID;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectParticle;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectPosition;
+import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectSVarInt;
+import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectSVarLong;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectShort;
+import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectShortLe;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectString;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectVarInt;
+import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectVarLong;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectVector3f;
+import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectVector3fLe;
 import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectVector3i;
+import protocolsupport.protocol.utils.datawatcher.objects.DataWatcherObjectVector3vi;
+import protocolsupportbuildprocessor.Preload;
 
+@Preload
 public class DataWatcherObjectIdRegistry {
 
 	private static final HashMap<Class<? extends DataWatcherObject<?>>, EnumMap<ProtocolVersion, Integer>> registry = new HashMap<>();
@@ -38,6 +47,7 @@ public class DataWatcherObjectIdRegistry {
 	}
 
 	static {
+		//PC
 		register(DataWatcherObjectByte.class, 0, ProtocolVersionsHelper.ALL_PC);
 		register(DataWatcherObjectVarInt.class, 1, ProtocolVersionsHelper.UP_1_9);
 		register(DataWatcherObjectFloat.class, 2, ProtocolVersionsHelper.UP_1_9);
@@ -68,6 +78,17 @@ public class DataWatcherObjectIdRegistry {
 		register(DataWatcherObjectShort.class, 1, ProtocolVersionsHelper.BEFORE_1_9);
 		register(DataWatcherObjectInt.class, 2, ProtocolVersionsHelper.BEFORE_1_9);
 		register(DataWatcherObjectVector3i.class, 6, ProtocolVersionsHelper.BEFORE_1_9);
+		register(DataWatcherObjectByte.class, 0, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectShortLe.class, 1, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectVarInt.class, 2, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectSVarInt.class, 2, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectFloatLe.class, 3, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectString.class, 4, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectItemStack.class, 5, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectVector3vi.class, 6, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectVarLong.class, 7, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectSVarLong.class, 7, ProtocolVersionsHelper.ALL_PE);
+		register(DataWatcherObjectVector3fLe.class, 8, ProtocolVersionsHelper.ALL_PE);
 	}
 
 	public static int getTypeId(@SuppressWarnings("rawtypes") Class<? extends DataWatcherObject> clazz, ProtocolVersion version) {

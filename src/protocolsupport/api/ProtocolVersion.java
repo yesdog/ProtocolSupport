@@ -9,7 +9,9 @@ import org.apache.commons.lang3.Validate;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import protocolsupport.utils.Utils;
+import protocolsupportbuildprocessor.Preload;
 
+@Preload
 public enum ProtocolVersion {
 
 	MINECRAFT_FUTURE(-1, new OrderId(ProtocolType.PC, 23)),
@@ -36,6 +38,10 @@ public enum ProtocolVersion {
 	MINECRAFT_1_5_1(60, new OrderId(ProtocolType.PC, 2), "1.5.1"),
 	MINECRAFT_1_4_7(51, new OrderId(ProtocolType.PC, 1), "1.4.7"),
 	MINECRAFT_LEGACY(-1, new OrderId(ProtocolType.PC, 0)),
+	MINECRAFT_PE_FUTURE(-1, new OrderId(ProtocolType.PE, 3)),
+	MINECRAFT_PE_1_8(313, new OrderId(ProtocolType.PE, 2), "PE-1.8.0"),
+	MINECRAFT_PE_1_7(291, new OrderId(ProtocolType.PE, 1), "PE-1.7.0"),
+	MINECRAFT_PE_LEGACY(-1, new OrderId(ProtocolType.PE, 0)),
 	UNKNOWN(-1, new OrderId(ProtocolType.UNKNOWN, 0));
 
 	private final int id;
@@ -107,6 +113,24 @@ public enum ProtocolVersion {
 	 */
 	public boolean isSupported() {
 		return name != null;
+	}
+
+	/**
+	 * Convenience method to check if version is
+	 * a PE version.
+	 * @return true if version is a PE version.
+	 */
+	public boolean isPE() {
+		return getProtocolType() == ProtocolType.PE;
+	}
+
+	/**
+	 * Convenience method to check if version is
+	 * a PC version.
+	 * @return true if version is a PC version.
+	 */
+	public boolean isPC() {
+		return getProtocolType() == ProtocolType.PC;
 	}
 
 	/**
@@ -277,6 +301,9 @@ public enum ProtocolVersion {
 			case PC: {
 				return MINECRAFT_1_13_2;
 			}
+			case PE: {
+				return MINECRAFT_PE_1_8;
+			}
 			default: {
 				throw new IllegalArgumentException(MessageFormat.format("No supported versions for protocol type {0}", type));
 			}
@@ -293,6 +320,9 @@ public enum ProtocolVersion {
 		switch (type) {
 			case PC: {
 				return MINECRAFT_1_4_7;
+			}
+			case PE: {
+				return MINECRAFT_PE_1_7;
 			}
 			default: {
 				throw new IllegalArgumentException(MessageFormat.format("No supported versions for protocol type {0}", type));

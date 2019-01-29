@@ -8,6 +8,7 @@
 //import java.util.concurrent.ConcurrentMap;
 //
 //import org.bukkit.Bukkit;
+//import org.bukkit.Chunk;
 //import org.bukkit.Material;
 //import org.bukkit.SoundCategory;
 //import org.bukkit.WorldType;
@@ -20,6 +21,7 @@
 //import com.flowpowered.network.service.CodecLookupService;
 //
 //import net.glowstone.GlowServer;
+//import net.glowstone.chunk.GlowChunk;
 //import net.glowstone.entity.meta.profile.GlowPlayerProfile;
 //import net.glowstone.net.message.KickMessage;
 //import net.glowstone.net.message.SetCompressionMessage;
@@ -148,8 +150,33 @@
 //public class GlowStonePacketFactory implements PlatformPacketFactory {
 //
 //	@Override
+//	public Object createInboundKeepAlivePacket(long keepAliveId) {
+//		return new PingMessage(keepAliveId);
+//	}
+//
+//	@Override
 //	public Message createInboundInventoryClosePacket() {
 //		return new CloseWindowMessage(0);
+//	}
+//
+//	@Override
+//	public Object createInboundPluginMessagePacket(String tag, byte[] data) {
+//		return new PluginMessage(tag, data);
+//	}
+//
+//	@Override
+//	public Message createInboundInventoryConfirmTransactionPacket(int windowId, int actionNumber, boolean accepted) {
+//		return new TransactionMessage(windowId, actionNumber, accepted);
+//	}
+//
+//	@Override
+//	public Message createInboundCustomPayloadPacket(String tag, byte[] data) {
+//		return new PluginMessage(tag, data);
+//	}
+//
+//	@Override
+//	public Message createOutboundUpdateChunkPacket(Chunk chunk) {
+//		return ((GlowChunk) chunk).toMessage();
 //	}
 //
 //	@Override
@@ -208,9 +235,10 @@
 //		return new SetCompressionMessage(threshold);
 //	}
 //
+//	@SuppressWarnings("deprecation")
 //	@Override
 //	public Message createBlockBreakSoundPacket(Position pos, Material type) {
-//		BlockDataEntry blockdataentry = BlockData.get(type);
+//		BlockDataEntry blockdataentry = BlockData.getById(type.getId());
 //		return new SoundEffectMessage(
 //			blockdataentry.getBreakSound(), SoundCategory.BLOCKS,
 //			pos.getX(), pos.getY(), pos.getZ(),
@@ -243,7 +271,7 @@
 //			UUID randomUUID = UUID.randomUUID();
 //			GlowPlayerProfile[] playerProfiles = new GlowPlayerProfile[profiles.size()];
 //			for (int i = 0; i < profiles.size(); i++) {
-//				playerProfiles[i] = new GlowPlayerProfile(profiles.get(i), randomUUID, false); // TODO: This tells Glowstone to query it async, should it be async or not?
+//				playerProfiles[i] = new GlowPlayerProfile(profiles.get(i), randomUUID, false);
 //			}
 //			playerProfiles = Arrays.copyOfRange(playerProfiles, 0, Math.min(playerProfiles.length, server.getPlayerSampleCount()));
 //			for (GlowPlayerProfile profile : playerProfiles) {
@@ -290,8 +318,18 @@
 //	}
 //
 //	@Override
-//	public Object createEntityStatusPacket(Entity entity, int status) {
+//	public Message createEntityStatusPacket(Entity entity, int status) {
 //		return new EntityStatusMessage(entity.getEntityId(), status);
+//	}
+//
+//	@Override
+//	public Message createUpdateChunkPacket(Chunk chunk) {
+//		return ((GlowChunk) chunk).toMessage();
+//	}
+//
+//	@Override
+//	public Message createBlockUpdatePacket(Position pos, int block) {
+//		return new BlockChangeMessage(pos.getX(), pos.getY(), pos.getZ(), block);
 //	}
 //
 //
@@ -313,11 +351,6 @@
 //	@Override
 //	public int getOutLoginSetCompressionPacketId() {
 //		return getOpcode(ProtocolType.LOGIN, OUTBOUND, SetCompressionMessage.class);
-//	}
-//
-//	@Override
-//	public int getOutLoginCustomPayloadPacketId() {
-//		return 0x04; //TODO
 //	}
 //
 //	@Override
@@ -432,7 +465,7 @@
 //
 //	@Override
 //	public int getOutPlayEntityPacketId() {
-//		return 0x27; // TODO: not implemented in Glowstone
+//		return 0x25; // TODO: not implemented in Glowstone
 //	}
 //
 //	@Override
@@ -726,38 +759,8 @@
 //	}
 //
 //	@Override
-//	public int getOutPlayCraftRecipeConfirmPacketId() {
+//	public int getOutPlayCraftingGridConfirmPacketId() {
 //		return getOpcode(ProtocolType.PLAY, OUTBOUND, CraftRecipeResponseMessage.class);
-//	}
-//
-//	@Override
-//	public int getOutPlayDeclareCommandsPacketId() {
-//		return 0x11; //TODO
-//	}
-//
-//	@Override
-//	public int getOutPlayDeclareRecipesPacketId() {
-//		return 0x54; //TODO
-//	}
-//
-//	@Override
-//	public int getOutPlayDeclareTagsPacket() {
-//		return 0x55; //TODO
-//	}
-//
-//	@Override
-//	public int getOutPlayQueryNBTResponsePacketId() {
-//		return 0x1D; //TODO
-//	}
-//
-//	@Override
-//	public int getOutPlayStopSoundPacketId() {
-//		return 0x4C; //TODO
-//	}
-//
-//	@Override
-//	public int getOutPlayLookAtPacketId() {
-//		return 0x31; //TODO
 //	}
 //
 //
@@ -784,11 +787,6 @@
 //	@Override
 //	public int getInLoginEncryptionBeginPacketId() {
 //		return getOpcode(ProtocolType.LOGIN, INBOUND, EncryptionKeyResponseMessage.class);
-//	}
-//
-//	@Override
-//	public int getInLoginCustomPayloadPacketId() {
-//		return 0x02; //TODO
 //	}
 //
 //	@Override
@@ -942,68 +940,18 @@
 //	}
 //
 //	@Override
-//	public int getInPlayRecipeBookDataPacketId() {
+//	public int getInPlayCraftingBookPacketId() {
 //		return getOpcode(ProtocolType.PLAY, INBOUND, CraftingBookDataMessage.class);
 //	}
 //
 //	@Override
-//	public int getInPlayCraftRecipeRequestPacketId() {
+//	public int getInPlayPrepareCraftingGridPacketId() {
 //		return getOpcode(ProtocolType.PLAY, INBOUND, CraftRecipeRequestMessage.class);
 //	}
 //
 //	@Override
 //	public int getInPlayAdvancementTabPacketId() {
 //		return getOpcode(ProtocolType.PLAY, INBOUND, AdvancementTabMessage.class);
-//	}
-//
-//	@Override
-//	public int getInPlayQueryBlockNBTPacketId() {
-//		return 0x01; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlayQueryEntityNBTPacketId() {
-//		return 0x0C; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlayEditBookPacketId() {
-//		return 0x0B; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlayPickItemPacketId() {
-//		return 0x15; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlayNameItemPacketId() {
-//		return 0x1C; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlaySelectTradePacketId() {
-//		return 0x1F; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlaySetBeaconEffectPacketId() {
-//		return 0x20; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlayUpdateCommandBlockPacketId() {
-//		return 0x22; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlayUpdateCommandMinecartPacketId() {
-//		return 0x23; //TODO
-//	}
-//
-//	@Override
-//	public int getInPlayUpdateStructureBlockPacketId() {
-//		return 0x25; //TODO
 //	}
 //
 //

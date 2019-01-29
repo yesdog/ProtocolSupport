@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.security.PrivateKey;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,24 +24,26 @@ import org.bukkit.event.player.PlayerPreLoginEvent;
 
 import io.netty.channel.ChannelPipeline;
 import protocolsupport.ProtocolSupport;
-import protocolsupport.api.ProtocolType;
 import protocolsupport.api.ProtocolVersion;
 import protocolsupport.api.events.PlayerLoginStartEvent;
 import protocolsupport.api.events.PlayerProfileCompleteEvent;
 import protocolsupport.api.utils.Profile;
 import protocolsupport.protocol.ConnectionImpl;
+import protocolsupport.protocol.packet.middleimpl.serverbound.handshake.v_pe.ClientLogin;
 import protocolsupport.protocol.utils.MinecraftEncryption;
 import protocolsupport.protocol.utils.authlib.GameProfile;
 import protocolsupport.protocol.utils.authlib.MinecraftSessionService;
 import protocolsupport.protocol.utils.authlib.MinecraftSessionService.AuthenticationUnavailableException;
-import protocolsupport.utils.Utils;
+import protocolsupport.utils.JavaSystemProperty;
 import protocolsupport.zplatform.ServerPlatform;
 import protocolsupport.zplatform.network.NetworkManagerWrapper;
+import protocolsupportbuildprocessor.Preload;
 
 @SuppressWarnings("deprecation")
+@Preload
 public abstract class AbstractLoginListener implements IPacketListener {
 
-	protected static final int loginThreadKeepAlive = Utils.getJavaPropertyValue("loginthreadskeepalive", 60, Integer::parseInt);
+	protected static final int loginThreadKeepAlive = JavaSystemProperty.getValue("loginthreadskeepalive", 60, Integer::parseInt);
 
 	static {
 		ProtocolSupport.logInfo(MessageFormat.format("Login threads keep alive time: {0}", loginThreadKeepAlive));
@@ -67,7 +70,7 @@ public abstract class AbstractLoginListener implements IPacketListener {
 	}
 
 	protected int loginTicks;
-	public void tick() {
+	public void loginTick() {
 		if (loginTicks++ == 600) {
 			disconnect("Took too long to log in");
 		}
@@ -88,6 +91,7 @@ public abstract class AbstractLoginListener implements IPacketListener {
 		return (connection.getProfile().getName() != null) ? (connection.getProfile() + " (" + networkManager.getAddress() + ")") : networkManager.getAddress().toString();
 	}
 
+	protected UUID forcedUUID = null;
 	public void handleLoginStart(String name) {
 		Validate.isTrue(state == LoginState.HELLO, "Unexpected hello packet");
 		state = LoginState.ONLINEMODERESOLVE;
@@ -105,9 +109,25 @@ public abstract class AbstractLoginListener implements IPacketListener {
 
 				profile.setOnlineMode(event.isOnlineMode());
 
+				forcedUUID = event.getForcedUUID();
+				if ((forcedUUID == null) && profile.isOnlineMode() && !event.useOnlineModeUUID()) {
+					forcedUUID = Profile.generateOfflineModeUUID(profile.getName());
+				}
 				if (profile.isOnlineMode()) {
-					state = LoginState.KEY;
-					networkManager.sendPacket(ServerPlatform.get().getPacketFactory().createLoginEncryptionBeginPacket(ServerPlatform.get().getMiscUtils().getEncryptionKeyPair().getPublic(), randomBytes));
+					switch (connection.getVersion().getProtocolType()) {
+						case PC: {
+							state = LoginState.KEY;
+							networkManager.sendPacket(ServerPlatform.get().getPacketFactory().createLoginEncryptionBeginPacket(ServerPlatform.get().getMiscUtils().getEncryptionKeyPair().getPublic(), randomBytes));
+							break;
+						}
+						case PE: {
+							loginOnlinePE();
+							break;
+						}
+						default: {
+							throw new IllegalArgumentException(MessageFormat.format("Unknown protocol type {0}", connection.getVersion().getProtocolType()));
+						}
+					}
 				} else {
 					loginOffline();
 				}
@@ -177,6 +197,21 @@ public abstract class AbstractLoginListener implements IPacketListener {
 		} catch (AuthenticationUnavailableException authenticationunavailableexception) {
 			disconnect("Authentication servers are down. Please try again later, sorry!");
 			Bukkit.getLogger().severe("Couldn't verify username because servers are unavailable");
+		} catch (Exception exception) {
+			disconnect("Failed to verify username!");
+			Bukkit.getLogger().log(Level.SEVERE, "Exception verifying " + connection.getProfile().getOriginalName(), exception);
+		}
+	}
+
+	public void loginOnlinePE() {
+		try {
+			String xuid = (String) connection.getMetadata(ClientLogin.XUID_METADATA_KEY);
+			if (xuid == null) {
+				disconnect("This server is in online mode, but no valid XUID was found (XBOX live auth required)");
+				return;
+			}
+			connection.getProfile().setOriginalUUID(new UUID(0, Long.parseLong(xuid)));
+			finishLogin();
 		} catch (Exception exception) {
 			disconnect("Failed to verify username!");
 			Bukkit.getLogger().log(Level.SEVERE, "Exception verifying " + connection.getProfile().getOriginalName(), exception);
@@ -260,11 +295,11 @@ public abstract class AbstractLoginListener implements IPacketListener {
 	}
 
 	protected static boolean isFullEncryption(ProtocolVersion version) {
-		return (version.getProtocolType() == ProtocolType.PC) && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_7_5);
+		return version.isPC() && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_7_5);
 	}
 
 	protected static boolean hasCompression(ProtocolVersion version) {
-		return (version.getProtocolType() == ProtocolType.PC) && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_8);
+		return version.isPC() && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_8);
 	}
 
 }

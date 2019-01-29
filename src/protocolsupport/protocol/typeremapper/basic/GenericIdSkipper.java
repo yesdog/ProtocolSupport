@@ -13,7 +13,9 @@ import protocolsupport.protocol.typeremapper.utils.SkippingTable.GenericSkipping
 import protocolsupport.protocol.utils.ProtocolVersionsHelper;
 import protocolsupport.protocol.utils.networkentity.NetworkEntityType;
 import protocolsupport.protocol.utils.types.WindowType;
+import protocolsupportbuildprocessor.Preload;
 
+@Preload
 public class GenericIdSkipper {
 
 	public static final EnumSkippingRegistry<NetworkEntityType, EnumSkippingTable<NetworkEntityType>> ENTITY = new EnumSkippingRegistry<NetworkEntityType, EnumSkippingTable<NetworkEntityType>>() {
@@ -45,6 +47,9 @@ public class GenericIdSkipper {
 			registerSkipEntry(Enchantment.DEPTH_STRIDER, ProtocolVersionsHelper.BEFORE_1_8);
 			registerSkipEntry(Enchantment.LURE, ProtocolVersionsHelper.BEFORE_1_7);
 			registerSkipEntry(Enchantment.LUCK, ProtocolVersionsHelper.BEFORE_1_7);
+			registerSkipEntry(Enchantment.BINDING_CURSE, ProtocolVersionsHelper.ALL_PE);
+			registerSkipEntry(Enchantment.SWEEPING_EDGE, ProtocolVersionsHelper.ALL_PE);
+			registerSkipEntry(Enchantment.VANISHING_CURSE, ProtocolVersionsHelper.ALL_PE);
 		}
 		protected void registerSkipEntry(Enchantment ench, ProtocolVersion... versions) {
 			registerSkipEntry(ench.getKey().getKey(), versions);
