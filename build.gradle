@@ -26,10 +26,6 @@ tasks.withType(AbstractCompile) {
 	classpath += configurations.shadow
 }
 
-tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
-}
-
 
 group 'protocolsupport'
 version '4.29-dev-pe'
@@ -38,11 +34,22 @@ sourceCompatibility = JavaVersion.VERSION_1_8
 
 import java.text.MessageFormat
 
-File librariesRuntimeDirectory = new File('libraries_runtime')
-librariesRuntimeDirectory.mkdirs()
+File librariesRuntimeDirectory = new File("libraries_runtime")
+File librariesShadeDirectory = new File("libraries_shade")
+File generatedResourcesDirectory = new File("gen")
+File annotationProcessorsDirectory = new File("processors")
+File targetJarDirectory = new File("target")
+String resourcesDirectoryName = "resources";
 
-File librariesShadeDirectory = new File('libraries_shade')
-librariesShadeDirectory.mkdirs()
+task setupFolders(type: DefaultTask) {doLast{
+	librariesRuntimeDirectory.mkdirs()
+	librariesShadeDirectory.mkdirs()
+	targetJarDirectory.mkdirs()
+	generatedResourcesDirectory.deleteDir()
+	generatedResourcesDirectory.mkdirs()
+    }
+
+}
 
 task updateRuntimeLibraries(type: UpdateLibrariesTask) {
 	directory = librariesRuntimeDirectory
@@ -88,10 +95,18 @@ dependencies {
 	compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.2.2'
 	compile group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
 	compile group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '5.2'
+	annotationProcessor fileTree(dir: annotationProcessorsDirectory, include: '*.jar')
+	shadow fileTree(dir: annotationProcessorsDirectory, include: '*.jar')
 	testCompile fileTree(dir: librariesRuntimeDirectory, include: '*.jar')
 	testCompile fileTree(dir: librariesShadeDirectory, include: '*.jar')
 	testCompile 'org.junit.jupiter:junit-jupiter-api:5.2.0'
 	testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
+}
+
+compileJava {
+	options.encoding = 'UTF-8'
+	options.incremental = false
+	options.compilerArgs << ("-Aprotocolsupportbuildprocessor.generatedresourcesdirectory=" + new File(generatedResourcesDirectory, resourcesDirectoryName + "/preload").getAbsolutePath())
 }
 
 test {
@@ -99,17 +114,13 @@ test {
 }
 
 
-File genDir = new File('gen')
-genDir.deleteDir()
-genDir.mkdirs()
-
 task generateLocaleList(type: DefaultTask) {doLast{
-	File langsListFile = new File(genDir, "resources/i18n/languages")
+	File langsListFile = new File(generatedResourcesDirectory, resourcesDirectoryName + "/i18n/languages")
 	langsListFile.getParentFile().mkdirs()
 	langsListFile.createNewFile()
 	new PrintWriter(langsListFile).withCloseable({
 		writer ->
-			new File(sourceSets.main.resources.srcDirs.iterator().next(), "resources/i18n").list()
+			new File(sourceSets.main.resources.srcDirs.iterator().next(), resourcesDirectoryName + "/i18n").list()
 			.each({
 				String[] split = it.split("[.]");
 				if (split.length == 2 && split[1].equals("json")) {
@@ -124,21 +135,11 @@ task generateInfo(type: DefaultTask) {doLast{
 	properties.setProperty("buildtime", new Date().format("yyyy.MM.dd 'at' HH:mm:ss z"))
 	properties.setProperty("buildhost", System.getProperty("protocolsupport.buildhost", "unknown"))
 	properties.setProperty("buildnumber", System.getProperty("protocolsupport.buildnumber", "unknown"))
-	File buildInfoFile = new File(genDir, "resources/buildinfo")
+	File buildInfoFile = new File(generatedResourcesDirectory, resourcesDirectoryName + "/buildinfo")
 	buildInfoFile.getParentFile().mkdirs()
 	buildInfoFile.createNewFile()
 	new FileOutputStream(buildInfoFile).withCloseable({ properties.store(it, "Build info") })
 }}
-
-task copyFinalJarToTarget(type: Copy) {
-	// JitPack searches for the output jar at the standard Gradle output directory (jar.archivePath)
-	// By copying it from there to our target destination JitPack can archive it in a Maven repository
-	from jar.archivePath.getPath()
-	into 'target'
-
-	//remove version suffix
-	rename (jar.archiveName, jar.baseName + '.jar')
-}
 
 shadowJar {
 	doFirst {
@@ -147,9 +148,8 @@ shadowJar {
 
 	from sourceSets.main.java.srcDirs
 	from 'LICENSE'
-	from genDir
+	from generatedResourcesDirectory
 
-	//remove the -all suffix
 	archiveName = jar.archiveName
 	minimizeJar = true
 
@@ -165,8 +165,18 @@ shadowJar {
 	relocate 'udpserversocketchannel', 'protocolsupport.libs.udpserversocketchannel'
 }
 
+task copyFinalJarToTarget(type: Copy) {
+	// JitPack searches for the output jar at the standard Gradle output directory (jar.archivePath)
+	// By copying it from there to our target destination JitPack can archive it in a Maven repository
+	from jar.archivePath.getPath()
+	into 'target'
+
+	//remove version suffix
+	rename (jar.archiveName, jar.baseName + '.jar')
+}
 
 compileJava.dependsOn(clean)
+compileJava.dependsOn(setupFolders)
 compileJava.dependsOn(updateRuntimeLibraries)
 compileJava.dependsOn(updateShadeLibraries)
 compileJava.finalizedBy(test)
