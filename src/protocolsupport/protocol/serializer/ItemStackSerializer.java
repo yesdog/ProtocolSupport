@@ -94,20 +94,21 @@ public class ItemStackSerializer {
 			itemstack.setLegacyData(from.readUnsignedShort());
 		}
 		if (version.isPE()) {
-			itemstack.setNBT(readTag(from, false, version));
+			itemstack.setNBT(readTag(from, version));
 			//TODO: CanPlaceOn PE
-			for (int i = 0; i < VarNumberSerializer.readSVarInt(from); i++) {
+			int n = VarNumberSerializer.readSVarInt(from);
+			for (int i = 0; i < n ; i++) {
 				StringSerializer.readString(from, version);
 			}
 			//TODO: CanDestroy PE
-			for (int i = 0; i < VarNumberSerializer.readSVarInt(from); i++) {
+			n = VarNumberSerializer.readSVarInt(from);
+			for (int i = 0; i < n ; i++) {
 				StringSerializer.readString(from, version);
 			}
 		} else {
 			itemstack.setNBT(readTag(from, version));
 		}
-		itemstack = ItemStackRemapper.remapFromClient(version, locale, itemstack);
-		return itemstack;
+		return ItemStackRemapper.remapFromClient(version, locale, itemstack);
 	}
 
 	/**
@@ -167,9 +168,12 @@ public class ItemStackSerializer {
 			Bukkit.getPluginManager().callEvent(event);
 			List<String> additionalLore = event.getAdditionalLore();
 			BaseComponent forcedDisplayName = event.getForcedDisplayName();
-			if ((forcedDisplayName != null) || !additionalLore.isEmpty()) {
-				NBTCompound rootTag = CommonNBT.getOrCreateRootTag(itemstack);
-				NBTCompound displayNBT = CommonNBT.getOrCreateDisplayTag(rootTag);
+			if (forcedDisplayName != null || !additionalLore.isEmpty()) {
+				NBTCompound nbt = itemstack.getNBT();
+				if (nbt == null) {
+					nbt = new NBTCompound();
+				}
+				NBTCompound displayNBT = CommonNBT.getOrCreateDisplayTag(nbt);
 
 				if (forcedDisplayName != null) {
 					displayNBT.setTag(CommonNBT.DISPLAY_NAME, new NBTString(ChatAPI.toJSON(forcedDisplayName)));
@@ -185,6 +189,8 @@ public class ItemStackSerializer {
 					}
 					displayNBT.setTag(CommonNBT.DISPLAY_LORE, loreNBT);
 				}
+
+				itemstack.setNBT(nbt);
 			}
 		}
 		itemstack = remapItemToClient(version, locale, itemstack.cloneItemStack());
@@ -243,8 +249,14 @@ public class ItemStackSerializer {
 			} else if (isUsingPENBT(version)) {
 				if (!varint) { // VarInts NBTs doesn't have length
 					final short length = from.readShortLE();
-					if (length <= 0) {
+					if (length == 0) {
 						return null;
+					} else if (length == -1) {
+						//omg what is this... normally 1. fixed key length?
+						if (from.readByte() != 1) {
+							System.out.println("Strange ItemStack byte isnt 1");
+						}
+						return PENBTSerializer.VI_INSTANCE.deserializeTag(from);
 					}
 					return PENBTSerializer.LE_INSTANCE.deserializeTag(from);
 				}
