@@ -303,7 +303,7 @@ public enum ProtocolVersion {
 				return MINECRAFT_1_13_2;
 			}
 			case PE: {
-				return MINECRAFT_PE_1_9;
+				return MINECRAFT_PE_1_10;
 			}
 			default: {
 				throw new IllegalArgumentException(MessageFormat.format("No supported versions for protocol type {0}", type));
