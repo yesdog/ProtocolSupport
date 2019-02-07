@@ -94,21 +94,20 @@ public class ItemStackSerializer {
 			itemstack.setLegacyData(from.readUnsignedShort());
 		}
 		if (version.isPE()) {
-			itemstack.setNBT(readTag(from, version));
+			itemstack.setNBT(readTag(from, false, version));
 			//TODO: CanPlaceOn PE
-			int n = VarNumberSerializer.readSVarInt(from);
-			for (int i = 0; i < n ; i++) {
+			for (int i = 0; i < VarNumberSerializer.readSVarInt(from); i++) {
 				StringSerializer.readString(from, version);
 			}
 			//TODO: CanDestroy PE
-			n = VarNumberSerializer.readSVarInt(from);
-			for (int i = 0; i < n ; i++) {
+			for (int i = 0; i < VarNumberSerializer.readSVarInt(from); i++) {
 				StringSerializer.readString(from, version);
 			}
 		} else {
 			itemstack.setNBT(readTag(from, version));
 		}
-		return ItemStackRemapper.remapFromClient(version, locale, itemstack);
+		itemstack = ItemStackRemapper.remapFromClient(version, locale, itemstack);
+		return itemstack;
 	}
 
 	/**
@@ -168,12 +167,9 @@ public class ItemStackSerializer {
 			Bukkit.getPluginManager().callEvent(event);
 			List<String> additionalLore = event.getAdditionalLore();
 			BaseComponent forcedDisplayName = event.getForcedDisplayName();
-			if (forcedDisplayName != null || !additionalLore.isEmpty()) {
-				NBTCompound nbt = itemstack.getNBT();
-				if (nbt == null) {
-					nbt = new NBTCompound();
-				}
-				NBTCompound displayNBT = CommonNBT.getOrCreateDisplayTag(nbt);
+			if ((forcedDisplayName != null) || !additionalLore.isEmpty()) {
+				NBTCompound rootTag = CommonNBT.getOrCreateRootTag(itemstack);
+				NBTCompound displayNBT = CommonNBT.getOrCreateDisplayTag(rootTag);
 
 				if (forcedDisplayName != null) {
 					displayNBT.setTag(CommonNBT.DISPLAY_NAME, new NBTString(ChatAPI.toJSON(forcedDisplayName)));
@@ -189,8 +185,6 @@ public class ItemStackSerializer {
 					}
 					displayNBT.setTag(CommonNBT.DISPLAY_LORE, loreNBT);
 				}
-
-				itemstack.setNBT(nbt);
 			}
 		}
 		itemstack = remapItemToClient(version, locale, itemstack.cloneItemStack());
@@ -252,11 +246,12 @@ public class ItemStackSerializer {
 					if (length == 0) {
 						return null;
 					} else if (length == -1) {
-						//omg what is this... normally 1. fixed key length?
-						if (from.readByte() != 1) {
-							System.out.println("Strange ItemStack byte isnt 1");
+						final int numNBT = from.readByte(); //TODO: wtf, why multiple NBT?
+						NBTCompound out = null;
+						for (int i = 0 ; i < numNBT ; i++) {
+							out = PENBTSerializer.VI_INSTANCE.deserializeTag(from);
 						}
-						return PENBTSerializer.VI_INSTANCE.deserializeTag(from);
+						return out;
 					}
 					return PENBTSerializer.LE_INSTANCE.deserializeTag(from);
 				}
