@@ -23,12 +23,8 @@ import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.GodPacke
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.HeldSlot;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.Interact;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.InventoryClose;
-<<<<<<< HEAD
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.LocalPlayerInitialized;
-=======
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.ItemFrameDrop;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.GodPacket;
->>>>>>> 0f8247cf... item frame fix
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.MapInfoRequest;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.MoveVehicle;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_pe.PlayerAbilities;

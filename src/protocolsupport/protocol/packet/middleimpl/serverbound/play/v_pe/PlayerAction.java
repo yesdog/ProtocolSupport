@@ -12,11 +12,7 @@ import protocolsupport.protocol.packet.middle.serverbound.play.MiddleUseEntity;
 import protocolsupport.protocol.packet.middleimpl.ServerBoundPacketData;
 import protocolsupport.protocol.serializer.PositionSerializer;
 import protocolsupport.protocol.serializer.VarNumberSerializer;
-<<<<<<< HEAD
-=======
-import protocolsupport.protocol.storage.netcache.MovementCache;
 import protocolsupport.protocol.utils.networkentity.NetworkEntity;
->>>>>>> 0f8247cf... item frame fix
 import protocolsupport.protocol.utils.types.Position;
 import protocolsupport.protocol.utils.types.UsedHand;
 import protocolsupport.utils.recyclable.RecyclableCollection;
